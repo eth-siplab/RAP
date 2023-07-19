@@ -23,7 +23,7 @@ Image Segmentation + Controllable Object-Level Image Restoration and Enhancement
 #### 4. More Examples
 ![examples](https://github.com/eth-siplab/RAP/blob/main/figs/examples.png)
 
-We will release our codes in June.
+We will release our codes very soon.
 
 #### BibTeX
 
