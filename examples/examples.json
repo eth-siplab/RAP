@@ -1,0 +1,104 @@
+[
+ {
+  "file": "lunch_1932.jpg",
+  "title": "Lunch atop a Skyscraper, 1932",
+  "hint": "Auto enhance restores all eleven faces; try Colorize on the background.",
+  "source": "https://commons.wikimedia.org/wiki/File:Lunch_atop_a_Skyscraper.jpg",
+  "license": "Public domain",
+  "author": "",
+  "credit": "Unknown · Public domain · Wikimedia Commons"
+ },
+ {
+  "file": "park_bench.jpg",
+  "title": "Park bench",
+  "hint": "Click the bench, choose ObjectClear: bench and shadow disappear.",
+  "source": "https://commons.wikimedia.org/wiki/File:Bench_in_Xisong_Park_20170405a.jpg",
+  "license": "CC0",
+  "author": "玄史生",
+  "credit": "玄史生 · CC0 · Wikimedia Commons"
+ },
+ {
+  "file": "park_shadows.jpg",
+  "title": "Dark park",
+  "hint": "Low light reveals the person on the bench; ObjectClear removes the person with the shadow.",
+  "source": "https://commons.wikimedia.org/wiki/File:Lonely_Park_Shadows_(Unsplash).jpg",
+  "license": "CC0",
+  "author": "Igor Ovsyannykov igorovsyannykov",
+  "credit": "Igor Ovsyannykov igorovsyannykov · CC0 · Wikimedia Commons"
+ },
+ {
+  "file": "migrant_mother_1936.jpg",
+  "title": "Migrant Mother, 1936",
+  "hint": "Type “face” and restore it with CodeFormer; then Colorize, export at 2×.",
+  "source": "https://commons.wikimedia.org/wiki/File:Lange-MigrantMother02.jpg",
+  "license": "Public domain",
+  "author": "Dorothea Lange",
+  "credit": "Dorothea Lange · Public domain · Wikimedia Commons"
+ },
+ {
+  "file": "wright_flyer_1903.jpg",
+  "title": "First flight, 1903",
+  "hint": "Colorize the scene, upscale on export.",
+  "source": "https://commons.wikimedia.org/wiki/File:Wright_First_Flight_1903Dec17_(full_restore_115).jpg",
+  "license": "Public domain",
+  "author": "John T. Daniels",
+  "credit": "John T. Daniels · Public domain · Wikimedia Commons"
+ },
+ {
+  "file": "night_streetlight.jpg",
+  "title": "Street light at night",
+  "hint": "Low light at Brightness 0.8 / Saturation 0.8 looks most natural here.",
+  "source": "https://commons.wikimedia.org/wiki/File:Street_light_next_to_a_birch.jpg",
+  "license": "CC0",
+  "author": "W.carter",
+  "credit": "W.carter · CC0 · Wikimedia Commons"
+ },
+ {
+  "file": "street_portrait.jpg",
+  "title": "Street portrait",
+  "hint": "Select subject, then Blur background: a portrait look from estimated depth.",
+  "source": "https://commons.wikimedia.org/wiki/File:Stockholm_man_with_headphones_(Unsplash).jpg",
+  "license": "CC0",
+  "author": "Yingchou Han hyingchou",
+  "credit": "Yingchou Han hyingchou · CC0 · Wikimedia Commons"
+ },
+ {
+  "file": "parrot_jpeg.jpg",
+  "title": "Parrot (JPEG q=10)",
+  "hint": "Fix JPEG artifacts: FBCNN estimates the quality factor by itself.",
+  "source": "https://commons.wikimedia.org/wiki/File:Blue,_red_and_green_parrot_(Unsplash).jpg",
+  "license": "CC0",
+  "author": "Mikhail Vasilyev miklevasilyev",
+  "credit": "Mikhail Vasilyev miklevasilyev · CC0 · Wikimedia Commons"
+ },
+ {
+  "file": "bird_blur.png",
+  "title": "Seagull (blurred)",
+  "hint": "Click the bird: PiSA-SR at full Detail on it, a gentler Detail on the rest.",
+  "credit": "Restore Anything Pipeline demo images (2023), synthetic degradation"
+ },
+ {
+  "file": "building_noise.png",
+  "title": "Building (noise)",
+  "hint": "SCUNet removes the grain in one click; DRUNet lets you set the strength.",
+  "credit": "Restore Anything Pipeline demo images (2023), synthetic degradation"
+ },
+ {
+  "file": "coffee_noise.png",
+  "title": "Coffee (noise)",
+  "hint": "Different denoising strength for the cup and the table.",
+  "credit": "Restore Anything Pipeline demo images (2023), synthetic degradation"
+ },
+ {
+  "file": "ruin_jpeg.jpg",
+  "title": "Ruin (JPEG q=8)",
+  "hint": "FBCNN JPEG estimates the quality factor by itself.",
+  "credit": "Restore Anything Pipeline demo images (2023), synthetic degradation"
+ },
+ {
+  "file": "sign_jpeg.jpg",
+  "title": "Sign (tiny JPEG)",
+  "hint": "FBCNN JPEG, then export at 4×.",
+  "credit": "Restore Anything Pipeline demo images (2023), synthetic degradation"
+ }
+]

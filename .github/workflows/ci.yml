@@ -1,0 +1,15 @@
+name: checks
+on: [push, pull_request]
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "numpy==1.26.4" "opencv-python-headless==4.11.0.86" pillow pytest
+      - name: Unit tests (no GPU needed)
+        run: python -m pytest -q tests/unit
+      - name: Front-end syntax
+        run: node --check rap/static/app.js

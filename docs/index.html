@@ -1,0 +1,445 @@
+<!doctype html>
+<!--
+  --------------------------------------------
+  RAP project page
+  --------------------------------------------
+  Restore Anything Pipeline: Segment Anything Meets Image Restoration (arXiv 2023)
+  https://github.com/eth-siplab/RAP
+  Jiaxi Jiang (https://jiaxi-jiang.com/)
+  Sensing, Interaction & Perception Lab,
+  Department of Computer Science, ETH Zurich
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Restore Anything Pipeline</title>
+<meta name="description" content="RAP: interactive, per-object image restoration. Select anything with SAM 3, give each region its own model, and tune it with a slider.">
+<meta property="og:title" content="Restore Anything Pipeline: Segment Anything Meets Image Restoration">
+<meta property="og:description" content="Interactive, per-object image restoration: select anything, give each region its own model, tune it with a slider.">
+<meta property="og:image" content="https://eth-siplab.github.io/RAP/compare/generate_after.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Noto+Sans:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a research project page that opens with results: teaser, results by scenario, then the pipeline
+   and the tool. One 1080px column; figures use the full width. Grey bands mark the credits.
+   Light only. */
+:root {
+  --bg: #ffffff;
+  --band: #f5f6f8;
+  --ink: #202226;
+  --text: #474a50;
+  --muted: #6b7078;
+  --line: #e3e5e9;
+  --link: #3273dc;
+  --button: #2f3033;
+  --title: 'Figtree', 'Helvetica Neue', Arial, sans-serif;
+  --body: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 16.5px/1.65 var(--body); }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+.container { max-width: 1080px; margin: 0 auto; padding-inline: 24px; }
+section { padding-block: 64px; }
+.band { background: var(--band); }
+h1, h2, h3 { font-family: var(--title); color: var(--ink); margin: 0; text-wrap: balance; }
+h2 { font-size: 31px; font-weight: 700; letter-spacing: -0.012em; margin-bottom: 10px; }
+h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.005em; }
+p { margin: 0 0 14px; max-width: 92ch; }
+.lede { font-size: 18.5px; line-height: 1.55; color: var(--text); margin-bottom: 30px; max-width: 76ch; }
+figure { margin: 0; }
+figcaption { font-size: 14.5px; line-height: 1.55; color: var(--muted); margin-top: 10px; max-width: 80ch; }
+figcaption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- title block ---------- */
+.hero { text-align: center; padding-block: 72px 30px; }
+.hero h1 { font-size: 44px; font-weight: 700; line-height: 1.18; letter-spacing: -0.015em; }
+.authors { font-family: var(--title); font-size: 21px; margin-top: 24px; display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 28px; }
+.affil { font-family: var(--title); font-size: 18px; color: var(--text); margin-top: 6px; }
+.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.links a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px 9px 15px; border-radius: 999px;
+  background: var(--button); color: #fff; font: 500 15px/1 var(--title); text-decoration: none; }
+.links a:hover { background: #111; }
+.links svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- teaser ---------- */
+.teaser video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 10px; background: #111; }
+.summary { font-family: var(--title); font-size: 22px; font-weight: 500; color: var(--ink); text-align: center; line-height: 1.45;
+  max-width: 44ch; margin: 22px auto 0; text-wrap: balance; }
+
+/* ---------- pipeline ---------- */
+.diagram-wrap { overflow-x: auto; }
+.diagram { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--body); }
+.diagram .box { fill: #fff; stroke: #c9ccd1; stroke-width: 1.3; }
+.diagram .soft { fill: var(--band); }
+.diagram .t { fill: var(--ink); font: 700 15px var(--title); }
+.diagram .s { fill: var(--muted); font-size: 12.5px; }
+.diagram .m { fill: var(--ink); font-size: 12.5px; font-weight: 500; }
+.diagram .arrow { stroke: #8a8f97; stroke-width: 1.4; fill: none; }
+.diagram .head { fill: #8a8f97; }
+.diagram .dash { fill: none; stroke: var(--link); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.diagram .note { fill: var(--link); font-size: 12px; }
+
+/* ---------- results ---------- */
+.group { display: grid; gap: 14px; }
+.group + .group { margin-top: 56px; }
+.group-lede { color: var(--muted); margin: -6px 0 6px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.cmp-view { position: relative; overflow: hidden; border-radius: 8px; background: var(--band); --pos: 50%; touch-action: pan-y; aspect-ratio: 3 / 2; }
+.cmp-view img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.cmp-view .after { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--pos)); }
+.cmp-line { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; margin-left: -1px; background: #fff; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.cmp-line::after {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f3033' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 7l-4 5 4 5M15 7l4 5-4 5'/%3E%3C/svg%3E") center / 18px no-repeat;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.cmp-view input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+.tag { position: absolute; top: 10px; padding: 3px 8px; border-radius: 4px; font: 600 12px/1.2 var(--title); color: #fff; background: rgba(0, 0, 0, 0.5); pointer-events: none; }
+.tag.l { left: 10px; } .tag.r { right: 10px; }
+
+/* ---------- tool ---------- */
+.points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; margin-bottom: 36px; }
+.points h3 { font-size: 18px; margin-bottom: 6px; }
+.points p { margin: 0; font-size: 15px; }
+.demos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.demos video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 8px; background: #111; }
+
+/* ---------- credits ---------- */
+.credits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; margin: 0; padding: 0; list-style: none; }
+.credits li { display: flex; justify-content: space-between; gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.credits span { color: var(--muted); }
+.credits a { font-weight: 500; text-align: right; }
+
+/* ---------- BibTeX ---------- */
+.bib { position: relative; }
+pre { margin: 0; padding: 18px 20px; background: var(--band); border-radius: 8px; overflow-x: auto; font: 13.5px/1.6 var(--mono); color: var(--ink); }
+.copy { position: absolute; top: 10px; right: 10px; padding: 5px 12px; border-radius: 999px; font: 500 12.5px var(--title); background: var(--button); color: #fff; border: 0; cursor: pointer; }
+.copy:hover { background: #111; }
+
+footer { border-top: 1px solid var(--line); }
+footer .container { padding-block: 26px 44px; font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 28px; justify-content: space-between; }
+
+@media (max-width: 860px) {
+  .credits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  section { padding-block: 44px; }
+  .hero { padding-block: 44px 22px; }
+  .hero h1 { font-size: 30px; }
+  .authors { font-size: 18px; }
+  .summary { font-size: 18px; }
+  h2 { font-size: 26px; }
+  .pair, .points, .demos { grid-template-columns: minmax(0, 1fr); }
+  .credits { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) { .container { padding-inline: 16px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="container hero">
+  <h1>Restore Anything Pipeline:<br>Segment Anything Meets Image Restoration</h1>
+  <div class="authors">
+    <a href="https://jiaxi-jiang.com/">Jiaxi Jiang</a>
+    <a href="https://www.christianholz.net/">Christian Holz</a>
+  </div>
+  <div class="affil">ETH Zürich</div>
+  <nav class="links" aria-label="Paper and code">
+    <a href="https://arxiv.org/pdf/2305.13093"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>Paper</a>
+    <a href="https://arxiv.org/abs/2305.13093"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l12 14M18 5L6 19"/></svg>arXiv</a>
+    <a href="https://github.com/eth-siplab/RAP"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 17l-5-5 5-5M16 7l5 5-5 5"/></svg>Code</a>
+  </nav>
+</header>
+
+<div class="container teaser">
+  <video src="videos/hero.mp4" poster="videos/hero_poster.jpg" autoplay muted loop playsinline preload="auto" width="1280" height="800"
+         aria-label="Selecting a face by name, a person as the subject, and a person with a click; each region gets its own model"></video>
+  <p class="summary">Select anything in a photo and give each region its own restoration model, at its own strength.</p>
+</div>
+
+<section>
+  <div class="container">
+    <h2>Results</h2>
+    <p class="lede">All from the released tool. Drag the divider to compare.</p>
+    <div class="group">
+      <h3>Old photos</h3>
+      <p class="group-lede">Faces, colour and detail come back separately, each with the model made for it.</p>
+      <figure class="cmp big">
+        <div class="cmp-view">
+          <img src="compare/old_photo_before.jpg" alt="Lunch atop a Skyscraper, black and white and low quality" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/old_photo_after.jpg" alt="The same photo colorized, with every face restored" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-old_photo" aria-label="Before and after: Lunch atop a Skyscraper, 1932">
+        </div>
+        <figcaption><b>Lunch atop a Skyscraper, 1932.</b> Colorized with DDColor, then every face restored with CodeFormer.</figcaption>
+      </figure>
+      <div class="pair">
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/migrant_before.jpg" alt="Migrant Mother, a small, heavily compressed copy" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/migrant_after.jpg" alt="The face restored with CodeFormer and the rest with PiSA-SR" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-migrant" aria-label="Before and after: Migrant Mother, 1936">
+        </div>
+        <figcaption><b>Migrant Mother, 1936.</b> The face restored with CodeFormer, the rest with PiSA-SR.</figcaption>
+      </figure>
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/wright_before.jpg" alt="The Wright Flyer's first flight in black and white" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/wright_after.jpg" alt="The same scene colorized and restored" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-wright" aria-label="Before and after: First flight, 1903">
+        </div>
+        <figcaption><b>First flight, 1903.</b> Colorized with DDColor, then restored with PiSA-SR.</figcaption>
+      </figure>
+      </div>
+    </div>
+    <div class="group">
+      <h3>Remove and replace</h3>
+      <p class="group-lede">Removals change the photo itself; everything else is then restored on the edited photo.</p>
+      <figure class="cmp big">
+        <div class="cmp-view">
+          <img src="compare/darkpark_before.jpg" alt="A dark park with a person sitting on a bench" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/darkpark_after.jpg" alt="The person removed and the scene brightened" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-darkpark" aria-label="Before and after: Remove, then brighten">
+        </div>
+        <figcaption><b>Remove, then brighten.</b> The person removed with ObjectClear; everything else brightened with HVI-CIDNet in the same pass.</figcaption>
+      </figure>
+      <div class="pair">
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/removal_before.jpg" alt="A park bench among plants, casting a shadow on the path" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/removal_after.jpg" alt="The same park with the bench and its shadow removed" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-removal" aria-label="Before and after: A bench and its shadow">
+        </div>
+        <figcaption><b>A bench and its shadow.</b> Removed together with ObjectClear.</figcaption>
+      </figure>
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/generate_before.jpg" alt="A blurry seagull on a stone quay by the sea" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/generate_after.jpg" alt="The seagull restored and standing on a tropical beach at sunset" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-generate" aria-label="Before and after: A new background">
+        </div>
+        <figcaption><b>A new background.</b> The seagull restored with PiSA-SR; the background generated from a prompt with FLUX.2 [klein].</figcaption>
+      </figure>
+      </div>
+    </div>
+    <div class="group">
+      <h3>Everyday fixes</h3>
+      <p class="group-lede">Compression, noise and darkness, each with a model that estimates its own strength or lets you set it.</p>
+      <figure class="cmp big">
+        <div class="cmp-view">
+          <img src="compare/jpeg_before.jpg" alt="A parrot saved as a JPEG at quality 10, with heavy blocking" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/jpeg_after.jpg" alt="The parrot after FBCNN removed the JPEG artifacts" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-jpeg" aria-label="Before and after: JPEG at quality 10">
+        </div>
+        <figcaption><b>JPEG at quality 10.</b> FBCNN estimates the quality factor by itself.</figcaption>
+      </figure>
+      <div class="pair">
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/noise_before.jpg" alt="A building against the sky, full of noise" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/noise_after.jpg" alt="The same photo with the noise removed" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-noise" aria-label="Before and after: Sensor noise">
+        </div>
+        <figcaption><b>Sensor noise.</b> Real noise removed with SCUNet.</figcaption>
+      </figure>
+      <figure class="cmp">
+        <div class="cmp-view">
+          <img src="compare/lowlight_before.jpg" alt="A dark night photo of a street light next to a birch" width="1200" height="800" loading="lazy">
+          <img class="after" src="compare/lowlight_after.jpg" alt="The night photo brightened, with the birch and street visible" width="1200" height="800" loading="lazy">
+          <div class="cmp-line"></div><span class="tag l">Before</span><span class="tag r">After</span>
+          <input type="range" min="0" max="100" value="50" step="0.5" id="cmp-lowlight" aria-label="Before and after: Night">
+        </div>
+        <figcaption><b>Night.</b> Brightened with HVI-CIDNet.</figcaption>
+      </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section>
+  <div class="container">
+    <h2>How RAP Works</h2>
+    <p class="lede">SAM&nbsp;3 turns clicks, boxes, strokes or a name into regions. Each region gets its own model and strength and is
+      processed at full resolution; removals and replacements go first, and everything else is restored on the edited photo.</p>
+    <figure>
+      <div class="diagram-wrap">
+        <svg class="diagram" viewBox="0 0 960 270" role="img" aria-labelledby="dg-title dg-desc">
+          <title id="dg-title">RAP pipeline</title>
+          <desc id="dg-desc">The photo is segmented into regions with SAM 3. Each region gets its own model. Removals edit the photo
+            first; the other regions and the background are processed on the edited photo and composited into the result.</desc>
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path class="head" d="M0 0L10 5L0 10z"/>
+            </marker>
+          </defs>
+          <rect class="box" x="10" y="95" width="120" height="80" rx="8"/>
+          <text class="t" x="70" y="130" text-anchor="middle">Photo</text>
+          <text class="s" x="70" y="150" text-anchor="middle">input image</text>
+          <path class="arrow" d="M130 135H168" marker-end="url(#ah)"/>
+          <rect class="box" x="172" y="75" width="160" height="120" rx="8"/>
+          <text class="t" x="252" y="104" text-anchor="middle">Segmentation</text>
+          <text class="m" x="252" y="126" text-anchor="middle">SAM 3</text>
+          <text class="s" x="252" y="148" text-anchor="middle">click, box, brush,</text>
+          <text class="s" x="252" y="165" text-anchor="middle">text, subject</text>
+          <path class="arrow" d="M332 135H370" marker-end="url(#ah)"/>
+          <rect class="box" x="374" y="20" width="250" height="230" rx="8"/>
+          <text class="t" x="499" y="48" text-anchor="middle">A model per region</text>
+          <rect class="soft" x="390" y="64" width="218" height="50" rx="5"/>
+          <rect class="dash" x="390" y="64" width="218" height="50" rx="5"/>
+          <text class="s" x="402" y="84">person (removal)</text><text class="m" x="402" y="102">ObjectClear</text>
+          <text class="note" x="598" y="84" text-anchor="end">edits the photo</text>
+          <rect class="soft" x="390" y="122" width="218" height="50" rx="5"/>
+          <text class="s" x="402" y="142">face</text><text class="m" x="402" y="160">CodeFormer</text>
+          <rect class="soft" x="390" y="180" width="218" height="50" rx="5"/>
+          <text class="s" x="402" y="200">background (everything else)</text><text class="m" x="402" y="218">HVI-CIDNet</text>
+          <path class="arrow" d="M624 135H662" marker-end="url(#ah)"/>
+          <rect class="box" x="666" y="55" width="150" height="160" rx="8"/>
+          <text class="t" x="741" y="84" text-anchor="middle">Composite</text>
+          <text class="s" x="741" y="108" text-anchor="middle">removals first;</text>
+          <text class="s" x="741" y="125" text-anchor="middle">other regions are</text>
+          <text class="s" x="741" y="142" text-anchor="middle">processed on the</text>
+          <text class="s" x="741" y="159" text-anchor="middle">edited photo and</text>
+          <text class="s" x="741" y="176" text-anchor="middle">blended by mask</text>
+          <path class="arrow" d="M816 135H854" marker-end="url(#ah)"/>
+          <rect class="box" x="858" y="95" width="92" height="80" rx="8"/>
+          <text class="t" x="904" y="130" text-anchor="middle">Result</text>
+          <text class="s" x="904" y="150" text-anchor="middle">export, 4×</text>
+        </svg>
+      </div>
+    </figure>
+  </div>
+</section>
+
+
+<section>
+  <div class="container">
+    <h2>Interactive Tool</h2>
+    <p class="lede">The code rebuilds RAP as a local web app with current models. It runs on an NVIDIA GPU with 8&nbsp;GB of memory or more.</p>
+    <div class="points">
+      <div><h3>Selection</h3><p>Click, drag a box, paint, or type a name such as “face” or “sky”. SAM&nbsp;3 draws the masks; a person can be matted with soft edges.</p></div>
+      <div><h3>Per-Region Models</h3><p>Restoration, denoising, JPEG artifacts, motion blur, faces, colorization, low light, object removal and generative fill. The rest of the photo gets its own model.</p></div>
+      <div><h3>Interactive Controls</h3><p>Every main control is rendered in advance, so sliders respond immediately. Compare with the original, then export with up to 4× upscaling.</p></div>
+    </div>
+    <div class="demos">
+      <figure>
+        <video src="videos/select.mp4" poster="videos/select_poster.jpg" autoplay muted loop playsinline preload="metadata" width="1280" height="800"
+               aria-label="Clicking a seagull, enhancing it with PiSA-SR and dragging the detail slider"></video>
+        <figcaption><b>Click, choose, slide.</b> Enhance the seagull and drag the <i>Detail</i> slider.</figcaption>
+      </figure>
+      <figure>
+        <video src="videos/remove.mp4" poster="videos/remove_poster.jpg" autoplay muted loop playsinline preload="metadata" width="1280" height="800"
+               aria-label="Clicking a park bench and removing it with its shadow"></video>
+        <figcaption><b>Remove with the shadow.</b> Click the bench; its shadow goes too.</figcaption>
+      </figure>
+      <figure>
+        <video src="videos/find.mp4" poster="videos/find_poster.jpg" autoplay muted loop playsinline preload="metadata" width="1280" height="800"
+               aria-label="Finding the sky by name and replacing it with a sunset, then denoising the building"></video>
+        <figcaption><b>Find by name.</b> Replace the sky with a sunset, then denoise the building.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container">
+    <h2>Built On</h2>
+    <p class="lede">RAP brings these models together; each keeps its own license.</p>
+    <ul class="credits">
+      <li><span>Segmentation</span><a href="https://github.com/facebookresearch/sam3">SAM 3</a></li>
+      <li><span>Subject matting</span><a href="https://github.com/ZhengPeng7/BiRefNet">BiRefNet</a></li>
+      <li><span>Depth</span><a href="https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf">Depth Anything V2</a></li>
+      <li><span>Real-world restoration</span><a href="https://github.com/csslc/PiSA-SR">PiSA-SR</a></li>
+      <li><span>Real noise</span><a href="https://github.com/cszn/SCUNet">SCUNet</a></li>
+      <li><span>Adjustable denoising</span><a href="https://github.com/cszn/DPIR">DRUNet</a></li>
+      <li><span>Motion blur</span><a href="https://github.com/megvii-research/NAFNet">NAFNet</a></li>
+      <li><span>JPEG artifacts</span><a href="https://github.com/jiaxi-jiang/FBCNN">FBCNN</a></li>
+      <li><span>Faces</span><a href="https://github.com/sczhou/CodeFormer">CodeFormer</a></li>
+      <li><span>Erase</span><a href="https://github.com/advimman/lama">LaMa</a></li>
+      <li><span>Object and shadow removal</span><a href="https://github.com/zjx0101/ObjectClear">ObjectClear</a></li>
+      <li><span>Generative fill</span><a href="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B">FLUX.2 [klein]</a></li>
+      <li><span>Colorization</span><a href="https://github.com/piddnad/DDColor">DDColor</a></li>
+      <li><span>Low light</span><a href="https://github.com/Fediory/HVI-CIDNet">HVI-CIDNet</a></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 id="bibtex-title">BibTeX</h2>
+    <div class="bib">
+      <pre id="bibtex">@article{jiang2023restore,
+  title={Restore anything pipeline: Segment anything meets image restoration},
+  author={Jiang, Jiaxi and Holz, Christian},
+  journal={arXiv preprint arXiv:2305.13093},
+  year={2023}
+}</pre>
+      <button class="copy" type="button" id="copy-bib">Copy</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <span>Sensing, Interaction &amp; Perception Lab, Department of Computer Science, ETH Zürich</span>
+    <span>Code under Apache-2.0 · Page layout after <a href="https://nerfies.github.io/">Nerfies</a></span>
+  </div>
+</footer>
+
+<script>
+// before/after sliders
+document.querySelectorAll('.cmp-view').forEach(function (view) {
+  var input = view.querySelector('input');
+  var set = function () { view.style.setProperty('--pos', input.value + '%'); };
+  input.addEventListener('input', set);
+  set();
+});
+
+// play videos only while visible; no autoplay for people who prefer reduced motion
+(function () {
+  var videos = Array.prototype.slice.call(document.querySelectorAll('video'));
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    videos.forEach(function (v) { v.removeAttribute('autoplay'); v.pause(); v.controls = true; });
+    return;
+  }
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { var p = e.target.play(); if (p && p.catch) p.catch(function () {}); }
+      else e.target.pause();
+    });
+  }, { threshold: 0.2 });
+  videos.forEach(function (v) { io.observe(v); });
+})();
+
+// copy BibTeX
+document.getElementById('copy-bib').addEventListener('click', function () {
+  var btn = this, text = document.getElementById('bibtex').textContent;
+  var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); };
+  var select = function () {
+    var r = document.createRange(); r.selectNodeContents(document.getElementById('bibtex'));
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected';
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, select);
+  else select();
+});
+</script>
+</body>
+</html>

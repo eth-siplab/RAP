@@ -1,0 +1,214 @@
+<!doctype html>
+<!--
+  --------------------------------------------
+  RAP web interface page
+  --------------------------------------------
+  Restore Anything Pipeline: Segment Anything Meets Image Restoration (arXiv 2023)
+  https://github.com/eth-siplab/RAP
+  Jiaxi Jiang (https://jiaxi-jiang.com/)
+  Sensing, Interaction & Perception Lab,
+  Department of Computer Science, ETH Zurich
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAP · Restore Anything Pipeline</title>
+<link rel="stylesheet" href="style.css">
+<script>
+  // Report script errors to the server log and show them on the page instead of failing silently.
+  window.addEventListener('error', function (e) {
+    var msg = (e.message || 'error') + ' @ ' + (e.filename || '') + ':' + (e.lineno || '') + ' · ' + navigator.userAgent;
+    try { fetch('/api/client-error', { method: 'POST', body: msg }); } catch (_) {}
+    var box = document.getElementById('page-error');
+    if (box) { box.hidden = false; box.textContent = 'The page script failed: ' + (e.message || 'error') + '. Try a hard refresh (Ctrl+Shift+R).'; }
+  });
+</script>
+</head>
+<body>
+<!-- The crop, undo and redo icons are adapted from Lucide (https://lucide.dev).
+     ISC License. Copyright (c) Lucide Icons and Contributors. Permission to use, copy, modify, and/or
+     distribute this software for any purpose with or without fee is hereby granted, provided that the
+     above copyright notice and this permission notice appear in all copies. THE SOFTWARE IS PROVIDED
+     "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE. -->
+<header class="topbar">
+  <div class="brand">
+    <button id="btn-home" class="home-btn" title="Back to the start page (examples)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 18 L10 8 L14 14 L16 11 L20 18 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16.5" cy="6.5" r="1.8" fill="currentColor"/></svg>
+      <span>RAP <span class="brand-sub">Restore Anything Pipeline</span></span></button>
+    <span class="models-wrap">
+      <button id="models-chip" class="models-chip" title="Models and GPU memory"><span class="mdot"></span><span id="models-text">Models</span></button>
+      <div id="models-panel" class="models-panel" hidden>
+        <div class="mp-head"><b>Models</b><span id="models-mem" class="muted"></span></div>
+        <div id="models-list" class="mp-list"></div>
+        <div class="mp-foot"><span class="muted">Models load when first used and move to CPU memory when idle.</span>
+          <button id="models-free" class="btn small">Free GPU memory</button></div>
+      </div>
+    </span>
+  </div>
+  <div class="actions">
+    <span id="busy" class="busy" hidden><span class="spinner"></span><span id="busy-text"></span><span id="busy-time" class="muted"></span></span>
+    <button id="btn-auto" class="btn accent" title="One click: restore the background with PiSA-SR and every face with CodeFormer" disabled>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z M18 14l.9 2.2 2.1.8-2.1.8L18 20l-.9-2.2-2.1-.8 2.1-.8z" fill="currentColor"/></svg>
+      Auto enhance</button>
+    <span class="tb-sep"></span>
+    <label class="btn" title="Open an image (or drop / paste one)">
+      <input id="file" type="file" accept="image/*" hidden>Open…
+    </label>
+    <button id="btn-undo-all" class="btn icon-only" title="Undo (Ctrl+Z)" disabled>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="btn-redo-all" class="btn icon-only" title="Redo (Ctrl+Shift+Z)" disabled>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <span class="tb-sep"></span>
+    <button id="btn-compare" class="btn" title="Press and hold to see the original (or hold Space)" disabled>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 9a3 3 0 100 6 3 3 0 000-6z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      Compare</button>
+    <button id="btn-split" class="btn" title="Before / after split view" disabled>Split</button>
+    <span class="tb-sep"></span>
+    <button id="btn-apply" class="btn" title="Bake the current result into the image and keep editing it (e.g. colorize first, then restore faces). Undoable." disabled>Apply</button>
+    <span class="export-wrap">
+      <button id="btn-export" class="btn primary" title="Export the result" disabled>Export…</button>
+      <div id="export-panel" class="export-panel" hidden>
+        <div class="ep-row"><span class="ep-label">Format</span>
+          <span class="seg" id="export-fmt"><button data-v="png" class="on">PNG</button><button data-v="jpeg">JPEG</button><button data-v="webp">WebP</button></span></div>
+        <div class="ep-row" id="export-q-row"><span class="ep-label">Quality</span>
+          <input id="export-q" type="range" min="50" max="100" step="1" value="92"><span id="export-q-val">92</span></div>
+        <div class="ep-row"><span class="ep-label">Size</span>
+          <select id="export-size">
+            <option value="1">Original</option><option value="2">2× (AI upscale)</option><option value="4">4× (AI upscale)</option>
+            <option value="m4096">Long side 4096 px</option><option value="m2048">Long side 2048 px</option><option value="m1080">Long side 1080 px</option>
+          </select></div>
+        <label class="ep-row check"><input id="export-meta" type="checkbox" checked> Keep metadata (EXIF)</label>
+        <div class="ep-info muted" id="export-info"></div>
+        <button id="export-go" class="btn primary">Download</button>
+      </div>
+    </span>
+  </div>
+</header>
+
+<main class="layout">
+  <section id="viewport" class="viewport">
+    <div id="stage" class="stage"><canvas id="canvas"></canvas></div>
+    <canvas id="overlay" class="overlay"></canvas>
+
+    <div id="empty" class="empty">
+      <div class="drop">
+        <h1>Restore anything, region by region</h1>
+        <p class="lead">Select objects by clicking or by name, give each one its own model, and dial it in with a slider.
+          Drop an image anywhere, or start from an example.</p>
+        <div class="chips">
+          <span class="chip">SAM 3 segmentation</span><span class="chip">Real-world restoration</span>
+          <span class="chip">Faces</span><span class="chip">Object + shadow removal</span>
+          <span class="chip">Colorize</span><span class="chip">Low light</span><span class="chip">4× upscaling</span>
+        </div>
+        <label class="btn primary big"><input id="file2" type="file" accept="image/*" hidden>Choose an image</label>
+        <div id="page-error" class="page-error" hidden></div>
+        <div id="examples" class="examples"></div>
+      </div>
+    </div>
+
+    <div id="toolbar" class="toolbar" hidden>
+      <button data-tool="point" class="tool active" title="Click to select (V). Right-click or Alt-click to exclude.">
+        <svg viewBox="0 0 24 24"><path d="M6 3 L18 13 L12.5 13.5 L15.5 20 L13 21 L10 14.5 L6 18 Z" /></svg></button>
+      <button data-tool="box" class="tool" title="Drag a box (B)">
+        <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1.5" /></svg></button>
+      <button data-tool="brush" class="tool" title="Brush (P): paint to add, right-drag to erase. Refines the selected region or starts a new one.">
+        <svg viewBox="0 0 24 24"><path d="M14.5 4.5l5 5L10 19c-1.5 1.5-4 2-6 1 1-2 .5-4.5 2-6z" /><path d="M13 6l5 5" /></svg></button>
+      <span id="brush-size" class="brush-size" hidden><input type="range" min="4" max="120" step="1" value="24" title="Brush size"></span>
+      <button data-tool="crop" class="tool" title="Crop, rotate, straighten, flip (C)">
+        <svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 002 2h14" /><path d="M2 6h14a2 2 0 012 2v14" /></svg></button>
+      <button data-tool="pan" class="tool" title="Pan (H). Middle-drag also pans, wheel zooms.">
+        <svg viewBox="0 0 24 24"><path d="M12 3 v18 M3 12 h18 M12 3 l-3 3 M12 3 l3 3 M12 21 l-3 -3 M12 21 l3 -3 M3 12 l3 -3 M3 12 l3 3 M21 12 l-3 -3 M21 12 l-3 3" /></svg></button>
+      <span class="sep"></span>
+      <button id="zoom-fit" class="tool text" title="Fit (F)">Fit</button>
+      <button id="zoom-1" class="tool text" title="Actual pixels (1)">1:1</button>
+      <span id="zoom-label" class="zoom-label">100%</span>
+    </div>
+
+    <div id="modehint" class="modehint" hidden></div>
+
+    <div id="cropbar" class="cropbar" hidden>
+      <select id="crop-ratio" title="Aspect ratio">
+        <option value="free">Free</option><option value="original">Original</option>
+        <option value="1">1:1</option><option value="0.8">4:5</option><option value="1.25">5:4</option>
+        <option value="1.5">3:2</option><option value="0.6667">2:3</option>
+        <option value="1.7778">16:9</option><option value="0.5625">9:16</option>
+      </select>
+      <button class="icon-btn" id="crop-rotl" title="Rotate left 90°"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 4v5h5"/></svg></button>
+      <button class="icon-btn" id="crop-rotr" title="Rotate right 90°"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-9-9M21 4v5h-5"/></svg></button>
+      <button class="icon-btn" id="crop-fliph" title="Flip horizontally"><svg viewBox="0 0 24 24"><path d="M12 3v18M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></button>
+      <button class="icon-btn" id="crop-flipv" title="Flip vertically"><svg viewBox="0 0 24 24"><path d="M3 12h18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg></button>
+      <label class="straighten" title="Straighten (double-click to reset)">Straighten
+        <input id="crop-angle" type="range" min="-45" max="45" step="0.1" value="0"><span id="crop-angle-val">0.0°</span></label>
+      <span id="crop-note" class="muted" hidden>corners will be filled</span>
+      <button class="btn small" id="crop-reset">Reset</button>
+      <button class="btn small" id="crop-cancel">Cancel</button>
+      <button class="btn small primary" id="crop-apply">Apply crop</button>
+    </div>
+
+    <div id="editing" class="editing" hidden>
+      <span class="dot"></span><span id="editing-name"></span>
+      <span class="muted">click to add · right-click to remove · <kbd>Esc</kbd> to finish</span>
+      <button id="btn-undo" class="btn small" title="Undo the last change (Ctrl+Z)">Undo</button>
+      <button id="btn-del-region" class="btn small" title="Delete this region (Delete)">Delete</button>
+      <button id="btn-done" class="btn small primary" title="Finish selecting (Esc, Enter, or click outside the image)">Done</button>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div id="steps" class="steps" hidden>
+      <div class="steps-head"><b>Getting started</b><button id="steps-hide" class="linkish" title="Hide the guide">hide</button></div>
+      <ol>
+        <li data-step="select">Select something: <b>click</b> it, <b>paint</b> it (P) or <b>find</b> it by name</li>
+        <li data-step="choose">Choose what to do with it, e.g. <b>Enhance photo</b> or <b>Restore faces</b></li>
+        <li data-step="tune">Fine-tune with the slider or the thumbnails; hold <kbd>Space</kbd> to compare</li>
+        <li data-step="export"><b>Export</b> when you like it</li>
+      </ol>
+    </div>
+    <div id="suggest" class="suggest" hidden>
+      <div class="suggest-head"><b>Suggestions</b><span id="suggest-status" class="muted"></span></div>
+      <div id="suggest-list"></div>
+    </div>
+    <form id="find" class="find">
+      <label for="find-input">Find by name</label>
+      <div class="find-row">
+        <input id="find-input" type="text" placeholder="face, sky, text, person…" autocomplete="off" disabled>
+        <button class="btn" disabled>Find</button>
+      </div>
+      <label class="check"><input id="find-separate" type="checkbox"> One region per instance</label>
+    </form>
+    <div class="quick">
+      <button id="btn-subject" class="btn" disabled title="Matte the main subject (BiRefNet) into a soft-edged region">Select subject</button>
+      <button id="btn-removebg" class="btn" disabled title="Select the subject and make the background transparent">Remove background</button>
+    </div>
+    <p class="hint" id="hint">Open an image to start.</p>
+    <div id="regions" class="regions"></div>
+  </aside>
+</main>
+
+<div id="help" class="help" hidden>
+  <div class="help-card">
+    <h2>Keyboard &amp; mouse</h2>
+    <table>
+      <tr><td><kbd>V</kbd></td><td>Select: click adds, right-click removes</td></tr>
+      <tr><td><kbd>B</kbd></td><td>Box select</td></tr>
+      <tr><td><kbd>P</kbd></td><td>Brush: paint adds, right-drag erases; <kbd>[</kbd> <kbd>]</kbd> size</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Crop, rotate, straighten, flip (<kbd>Enter</kbd> applies)</td></tr>
+      <tr><td><kbd>H</kbd> / middle-drag</td><td>Pan; wheel zooms</td></tr>
+      <tr><td><kbd>F</kbd> · <kbd>1</kbd></td><td>Fit · actual pixels</td></tr>
+      <tr><td>hold <kbd>Space</kbd></td><td>Compare with the original</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Undo / redo (everything, including apply and crop)</td></tr>
+      <tr><td><kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>Finish the current selection</td></tr>
+      <tr><td><kbd>Delete</kbd></td><td>Delete the selected region</td></tr>
+      <tr><td>double-click a slider</td><td>Reset it</td></tr>
+      <tr><td><kbd>?</kbd></td><td>This help</td></tr>
+    </table>
+    <p class="muted">Tips: <b>Apply &amp; continue</b> chains steps (colorize, apply, then Auto enhance the faces).
+      <b>Generative fill</b> on the Background layer replaces the background.</p>
+  </div>
+</div>
+<div id="picker" class="picker" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

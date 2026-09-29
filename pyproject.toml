@@ -1,0 +1,43 @@
+[project]
+name = "restore-anything"
+version = "0.2.0"
+description = "Restore Anything Pipeline (RAP): interactive region-wise image restoration with SAM 3 and a model per region."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+  "numpy>=1.26,<2",
+  "scipy<1.16",
+  "opencv-python-headless<4.12",
+  "pillow",
+  "diffusers>=0.40,<0.41",   # FLUX.2 [klein] inpainting needs 0.40
+  "transformers>=5.0,<6",
+  "accelerate",
+  "safetensors",
+  "fastapi",
+  "uvicorn[standard]",
+  "python-multipart",
+  "gdown",
+  "setuptools<81",   # sam3 still imports pkg_resources
+  "pycocotools",     # imported by sam3 at load time
+  "matplotlib",
+  "einops",
+  "lmdb", "yapf", "addict",  # imported by CodeFormer's vendored basicsr
+  "kornia",                  # imported by BiRefNet's model code
+  "timm>=1.0,<2",
+]
+
+[project.optional-dependencies]
+test = ["playwright"]
+
+[project.scripts]
+restore-anything = "rap.__main__:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["rap", "rap.restorers"]
+
+[tool.setuptools.package-data]
+rap = ["static/*"]

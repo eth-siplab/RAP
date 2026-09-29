@@ -1,0 +1,10 @@
+weights/
+third_party/
+logs/
+scratch/
+tests/out/
+__pycache__/
+*.egg-info/
+docs/demos/*.webm
+docs/demos/*.json
+docs/demos/_tmp_*/
